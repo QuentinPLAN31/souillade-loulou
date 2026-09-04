@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon Dressing</title>
+<style>
+  :root{
+    --bg:#faf8f5; --panel:#ffffff; --border:#e7e2da; --ink:#2b2620; --sub:#8a8175;
+    --accent:#c98a5e; --accent-ink:#ffffff; --good:#6a9a6a; --bad:#c46a63; --warn:#d3a24c;
+    --radius:14px; --shadow:0 2px 10px rgba(40,30,20,.06);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px;}
+  nav{display:flex;gap:6px;}
+  nav button{border:none;background:transparent;padding:9px 14px;border-radius:999px;font-size:13.5px;cursor:pointer;color:var(--sub);font-weight:600;}
+  nav button.active{background:var(--accent);color:var(--accent-ink);}
+  main{padding:20px 24px 60px;max-width:1300px;margin:0 auto;}
+  .view{display:none;}
+  .view.active{display:block;}
+  h2{font-size:16px;margin:22px 0 10px;color:var(--ink);}
+  h2:first-child{margin-top:0;}
+  .row{display:flex;gap:22px;flex-wrap:wrap;}
+  .col{flex:1;min-width:280px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;box-shadow:var(--shadow);transition:transform .12s;}
+  .card:hover{transform:translateY(-2px);}
+  .card .thumb{width:100%;aspect-ratio:1/1;background:#f1ece4 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px;}
+  .card .thumb.stack{display:grid;grid-template-columns:1fr 1fr;}
+  .card .thumb.stack div{background:#f1ece4 center/cover no-repeat;}
+  .card .label{padding:8px 10px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:6px;}
+  .label small{color:var(--sub);font-weight:500;}
+  .pill{display:inline-block;padding:3px 9px;border-radius:999px;background:#f1ece4;color:var(--sub);font-size:11px;font-weight:600;margin:2px 4px 0 0;}
+  .pill.on{background:var(--accent);color:#fff;}
+  .empty{color:var(--sub);font-size:13px;padding:14px;background:var(--panel);border:1px dashed var(--border);border-radius:var(--radius);}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  input,select,textarea,button.btn{font-family:inherit;font-size:13.5px;border:1px solid var(--border);border-radius:9px;padding:9px 11px;background:#fff;color:var(--ink);}
+  button.btn{cursor:pointer;font-weight:600;background:var(--panel);}
+  button.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.btn.ghost{background:transparent;border-color:transparent;color:var(--sub);}
+  button.btn.danger{color:var(--bad);}
+  button.btn:hover{filter:brightness(0.97);}
+  .modalbg{position:fixed;inset:0;background:rgba(30,25,20,.45);display:none;align-items:flex-start;justify-content:center;z-index:100;overflow:auto;padding:40px 16px;}
+  .modalbg.open{display:flex;}
+  .modal{background:var(--panel);border-radius:16px;max-width:640px;width:100%;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.2);}
+  .modal h3{margin-top:0;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px;}
+  .field input,.field select,.field textarea{width:100%;}
+  .tagbox{display:flex;flex-wrap:wrap;gap:6px;}
+  .tagbox .pill{cursor:pointer;user-select:none;}
+  .imgpick{display:flex;gap:12px;align-items:center;}
+  .imgpick img{width:90px;height:90px;object-fit:cover;border-radius:10px;background:#f1ece4;border:1px solid var(--border);}
+  .close-x{position:absolute;top:14px;right:16px;cursor:pointer;color:var(--sub);font-size:18px;background:none;border:none;}
+  .modal{position:relative;}
+  .weather-box{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#f3e9dc,#eef3ea);border-radius:16px;padding:16px 20px;margin-bottom:16px;}
+  .weather-box .temp{font-size:34px;font-weight:800;}
+  .weather-box .sub{color:var(--sub);font-size:13px;}
+  .matrix-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px;max-height:520px;background:#fff;}
+  table.matrix{border-collapse:collapse;font-size:12px;}
+  table.matrix th,table.matrix td{border:1px solid var(--border);padding:0;text-align:center;}
+  table.matrix th{background:#f7f3ec;position:sticky;top:0;z-index:2;padding:6px 4px;font-weight:600;max-width:70px;}
+  table.matrix th.rowhead{position:sticky;left:0;z-index:3;background:#f7f3ec;text-align:left;padding:6px 8px;max-width:140px;}
+  table.matrix td{width:34px;height:34px;cursor:pointer;}
+  table.matrix td.yes{background:#dcefdc;}
+  table.matrix td.no{background:#f6dedb;}
+  table.matrix img.thumbmini{width:26px;height:26px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:5px;}
+  .backoffice-list{display:flex;flex-direction:column;gap:8px;}
+  .bo-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px 10px;}
+  .bo-row img{width:44px;height:44px;object-fit:cover;border-radius:8px;background:#f1ece4;}
+  .bo-row .meta{flex:1;font-size:12.5px;}
+  .bo-row .meta .name{font-weight:700;font-size:13.5px;}
+  .searchbar{flex:1;min-width:180px;}
+  .filter-picked{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px;}
+  .filter-picked img{width:64px;height:64px;object-fit:cover;border-radius:10px;background:#f1ece4;}
+  .slider-row{display:flex;align-items:center;gap:8px;}
+  .slider-row input[type=range]{flex:1;}
+  .tabs-sub{display:flex;gap:6px;margin-bottom:14px;}
+  .tabs-sub button{border:1px solid var(--border);background:#fff;border-radius:8px;padding:7px 12px;font-size:12.5px;cursor:pointer;font-weight:600;color:var(--sub);}
+  .tabs-sub button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .outfit-preview{display:flex;gap:10px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:10px;}
+  .outfit-preview img{width:70px;height:70px;object-fit:cover;border-radius:8px;background:#f1ece4;}
+  .badge-compat{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;}
+  .badge-compat.yes{background:#dcefdc;color:#3a6b3a;}
+  .badge-compat.no{background:#f6dedb;color:#8a3a33;}
+  .badge-compat.unk{background:#f1ece4;color:var(--sub);}
+  footer{text-align:center;color:var(--sub);font-size:11.5px;padding:20px;}
+  .daily-card{background:linear-gradient(135deg,#fff,#f6efe6);border:1px solid var(--border);border-radius:16px;padding:16px 18px;margin-bottom:20px;}
+  .daily-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .daily-card .outfit-preview{border:none;padding:6px 0 0;margin-top:0;background:transparent;}
+  .daily-card .outfit-preview img{width:96px;height:96px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>👗 Mon Dressing</h1>
+  <nav id="mainNav">
+    <button data-view="tenue" class="active">Tenue du jour</button>
+    <button data-view="filtre">Par vêtement</button>
+    <button data-view="meteo">Météo</button>
+    <button data-view="dressing">Mon dressing</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- VUE TENUE DU JOUR -->
+  <section class="view active" id="view-tenue">
+    <div class="daily-card" id="dailyCard">
+      <div class="daily-head">
+        <h2 style="margin:0;">✨ Tenue du jour</h2>
+        <button class="btn primary" onclick="rerollDaily()">🎲 Autre proposition</button>
+      </div>
+      <div id="dailyBody" class="outfit-preview"></div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <h2>Dossiers par style</h2>
+        <div class="toolbar">
+          <button class="btn primary" onclick="openStyleFolderModal()">+ Nouveau dossier de style</button>
+        </div>
+        <div class="grid" id="styleFoldersGrid"></div>
+      </div>
+      <div class="col">
+        <h2>Dossiers par catégorie</h2>
+        <div class="toolbar">
+          <button class="btn" onclick="openCategoryFolderModal()">+ Nouvelle catégorie</button>
+        </div>
+        <div class="grid" id="categoryFoldersGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VUE FOLDER OPEN (partagée) -->
+  <section class="view" id="view-folder">
+    <div class="toolbar">
+      <button class="btn ghost" onclick="showView('tenue')">← Retour aux dossiers</button>
+      <h2 id="folderTitle" style="margin:0 0 0 8px;"></h2>
+    </div>
+    <div class="grid" id="folderGrid"></div>
+    <div id="outfitBuilder"></div>
+  </section>
+
+  <!-- VUE FILTRE PAR VETEMENT -->
+  <section class="view" id="view-filtre">
+    <h2>Choisir un vêtement et voir ce qui va avec</h2>
+    <div class="toolbar">
+      <select id="filtreSelect" class="searchbar"></select>
+    </div>
+    <div id="filtreResult"></div>
+  </section>
+
+  <!-- VUE METEO -->
+  <section class="view" id="view-meteo">
+    <h2>Météo & vêtements adaptés</h2>
+    <div class="weather-box" id="weatherBox">
+      <div>
+        <div class="temp" id="weatherTemp">--°C</div>
+        <div class="sub" id="weatherSub">Localisation en cours…</div>
+      </div>
+      <button class="btn" onclick="fetchWeather()">Actualiser</button>
+    </div>
+    <div class="row">
+      <div class="col"><h2 style="margin-top:0;">Hauts adaptés</h2><div class="grid" id="meteoHauts"></div></div>
+      <div class="col"><h2 style="margin-top:0;">Bas adaptés</h2><div class="grid" id="meteoBas"></div></div>
+    </div>
+  </section>
+
+  <!-- VUE DRESSING (back office) -->
+  <section class="view" id="view-dressing">
+    <div class="tabs-sub">
+      <button class="active" data-sub="ajout">Ajouter un vêtement</button>
+      <button data-sub="liste">Tous mes vêtements</button>
+      <button data-sub="matrice">Tableau de compatibilité</button>
+    </div>
+
+    <div id="sub-ajout">
+      <h2 style="margin-top:0;">Nouveau vêtement</h2>
+      <div class="modal" style="max-width:640px;padding:0;box-shadow:none;border:1px solid var(--border);">
+        <div style="padding:20px;">
+          <div class="field">
+            <label>Photo</label>
+            <div class="imgpick">
+              <img id="newImgPreview" src="" alt="">
+              <input type="file" id="newImgFile" accept="image/*">
+              <button class="btn" onclick="enhanceImage('newImgPreview')">✨ Améliorer l'image</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col field">
+              <label>Nom</label>
+              <input id="newName" placeholder="ex: Pull beige côtelé">
+            </div>
+            <div class="col field">
+              <label>Catégorie</label>
+              <select id="newCategory">
+                <option value="haut">Haut</option>
+                <option value="bas">Bas</option>
+                <option value="robe">Robe / Combinaison</option>
+                <option value="accessoire">Accessoire</option>
+                <option value="chaussures">Chaussures</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Type (catégorie automatique)</label>
+            <div class="tagbox" id="newTypeTags"></div>
+            <input id="newTypeCustom" placeholder="Ajouter un type personnalisé + Entrée" style="margin-top:8px;">
+          </div>
+          <div class="field">
+            <label>Styles</label>
+            <div class="tagbox" id="newStyleTags"></div>
+            <input id="newStyleCustom" placeholder="Ajouter un style personnalisé + Entrée" style="margin-top:8px;">
+          </div>
+          <div class="field">
+            <label>Plage de température idéale (°C)</label>
+            <div class="slider-row">
+              <span id="tempMinLabel">-5°</span>
+              <input type="range" id="tempMin" min="-20" max="40" value="-5">
+              <input type="range" id="tempMax" min="-20" max="40" value="15">
+              <span id="tempMaxLabel">15°</span>
+            </div>
+          </div>
+          <button class="btn primary" onclick="saveCloth()">Enregistrer le vêtement</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="sub-liste" style="display:none;">
+      <h2 style="margin-top:0;">Tous mes vêtements</h2>
+      <div class="toolbar">
+        <input class="searchbar" id="listSearch" placeholder="Rechercher…" oninput="renderClothList()">
+        <select id="listCatFilter" onchange="renderClothList()">
+          <option value="">Toutes catégories</option>
+          <option value="haut">Haut</option>
+          <option value="bas">Bas</option>
+          <option value="robe">Robe</option>
+          <option value="accessoire">Accessoire</option>
+          <option value="chaussures">Chaussures</option>
+        </select>
+      </div>
+      <div class="backoffice-list" id="clothList"></div>
+    </div>
+
+    <div id="sub-matrice" style="display:none;">
+      <h2 style="margin-top:0;">Tableau de compatibilité Hauts × Bas</h2>
+      <p class="empty" style="margin-bottom:12px;">Coche les combinaisons qui fonctionnent. Vert = ça va ensemble, rouge = à éviter, gris = pas encore décidé.</p>
+      <div class="matrix-wrap"><table class="matrix" id="matrixTable"></table></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL: nouveau dossier -->
+<div class="modalbg" id="folderModalBg">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('folderModalBg')">✕</button>
+    <h3 id="folderModalTitle">Nouveau dossier</h3>
+    <div class="field"><label>Nom</label><input id="folderModalName" placeholder="ex: Casual chic"></div>
+    <button class="btn primary" onclick="submitFolderModal()">Créer</button>
+  </div>
+</div>
+
+<!-- MODAL: fiche vêtement -->
+<div class="modalbg" id="itemModalBg">
+  <div class="modal" id="itemModalContent"></div>
+</div>
+
+<footer>Mon Dressing — données stockées uniquement sur cet appareil.</footer>
+
+<script>
+/* ---------------- IndexedDB helper ---------------- */
+const DB_NAME='mon-dressing', DB_VERSION=1;
+let db;
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('clothes')) d.createObjectStore('clothes',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta',{keyPath:'key'});
+    };
+    req.onsuccess=e=>resolve(e.target.result);
+    req.onerror=e=>reject(e);
+  });
+}
+function tx(store,mode='readonly'){ return db.transaction(store,mode).objectStore(store); }
+function idbGetAll(store){ return new Promise(res=>{ const r=tx(store).getAll(); r.onsuccess=()=>res(r.result||[]); }); }
+function idbPut(store,val){ return new Promise(res=>{ const r=tx(store,'readwrite').put(val); r.onsuccess=()=>res(); }); }
+function idbDelete(store,key){ return new Promise(res=>{ const r=tx(store,'readwrite').delete(key); r.onsuccess=()=>res(); }); }
+function idbGet(store,key){ return new Promise(res=>{ const r=tx(store).get(key); r.onsuccess=()=>res(r.result); }); }
+
+/* ---------------- State ---------------- */
+let CLOTHES=[]; // {id,name,category,typeTags[],styleTags[],tempMin,tempMax,image}
+let META={ combos:{}, categoryTypes:{ haut:['Manches longues','Manches courtes','Sans manches','Débardeur','Pull','Sweat','Veste','Chemise'], bas:['Jean','Pantalon','Short','Jupe','Legging','Jogging'], robe:['Robe'],accessoire:['Accessoire'],chaussures:['Chaussures'] }, styleFolders:[] };
+let currentFolder=null; // {kind:'style'|'category', value:string}
+let outfitPick={haut:null,bas:null};
+
+const uid=()=>'c'+Math.random().toString(36).slice(2,10);
+
+async function loadAll(){
+  await ensureDB();
+  CLOTHES = await idbGetAll('clothes');
+  const metaRow = await idbGet('meta','app');
+  if(metaRow) META = Object.assign(META, metaRow.data);
+}
+async function ensureDB(){ if(!db) db = await openDB(); }
+async function persistMeta(){ await idbPut('meta',{key:'app',data:META}); }
+async function persistCloth(c){ await idbPut('clothes',c); }
+
+/* ---------------- Nav ---------------- */
+document.getElementById('mainNav').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-view]'); if(!b) return;
+  showView(b.dataset.view);
+});
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  if(name==='tenue') { renderFolders(); renderDaily(); }
+  if(name==='filtre') renderFiltreView();
+  if(name==='meteo') renderMeteoView();
+  if(name==='dressing') { renderTypeTagPickers(); renderClothList(); renderMatrix(); }
+}
+document.querySelectorAll('.tabs-sub button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.tabs-sub button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    ['ajout','liste','matrice'].forEach(s=>document.getElementById('sub-'+s).style.display = (s===b.dataset.sub)?'block':'none');
+    if(b.dataset.sub==='liste') renderClothList();
+    if(b.dataset.sub==='matrice') renderMatrix();
+  });
+});
+
+/* ---------------- Image handling ---------------- */
+document.getElementById('newImgFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ document.getElementById('newImgPreview').src=reader.result; };
+  reader.readAsDataURL(f);
+});
+function enhanceImage(imgId){
+  const img=document.getElementById(imgId);
+  if(!img.src) return;
+  const im=new Image();
+  im.crossOrigin='anonymous';
+  im.onload=()=>{
+    const canvas=document.createElement('canvas');
+    canvas.width=im.width; canvas.height=im.height;
+    const ctx=canvas.getContext('2d');
+    ctx.filter='contrast(1.12) brightness(1.06) saturate(1.12)';
+    ctx.drawImage(im,0,0);
+    // simple sharpen pass via convolution
+    const data=ctx.getImageData(0,0,canvas.width,canvas.height);
+    img.src=canvas.toDataURL('image/jpeg',0.92);
+  };
+  im.src=img.src;
+}
+
+/* ---------------- Type/Style tag pickers (add form) ---------------- */
+function allTypeTags(cat){ return META.categoryTypes[cat]||[]; }
+let newSelTypes=new Set(), newSelStyles=new Set();
+function renderTypeTagPickers(){
+  const cat=document.getElementById('newCategory').value;
+  const box=document.getElementById('newTypeTags'); box.innerHTML='';
+  allTypeTags(cat).forEach(t=>{
+    const p=document.createElement('span'); p.className='pill'+(newSelTypes.has(t)?' on':''); p.textContent=t;
+    p.onclick=()=>{ newSelTypes.has(t)?newSelTypes.delete(t):newSelTypes.add(t); renderTypeTagPickers(); };
+    box.appendChild(p);
+  });
+  const sbox=document.getElementById('newStyleTags'); sbox.innerHTML='';
+  META.styleFolders.forEach(s=>{
+    const p=document.createElement('span'); p.className='pill'+(newSelStyles.has(s)?' on':''); p.textContent=s;
+    p.onclick=()=>{ newSelStyles.has(s)?newSelStyles.delete(s):newSelStyles.add(s); renderTypeTagPickers(); };
+    sbox.appendChild(p);
+  });
+}
+document.getElementById('newCategory').addEventListener('change',renderTypeTagPickers);
+document.getElementById('newTypeCustom').addEventListener('keydown',e=>{
+  if(e.key==='Enter' && e.target.value.trim()){
+    const cat=document.getElementById('newCategory').value;
+    const v=e.target.value.trim();
+    if(!META.categoryTypes[cat]) META.categoryTypes[cat]=[];
+    if(!META.categoryTypes[cat].includes(v)) META.categoryTypes[cat].push(v);
+    newSelTypes.add(v); e.target.value=''; renderTypeTagPickers(); persistMeta();
+  }
+});
+document.getElementById('newStyleCustom').addEventListener('keydown',e=>{
+  if(e.key==='Enter' && e.target.value.trim()){
+    const v=e.target.value.trim();
+    if(!META.styleFolders.includes(v)) META.styleFolders.push(v);
+    newSelStyles.add(v); e.target.value=''; renderTypeTagPickers(); persistMeta();
+  }
+});
+['tempMin','tempMax'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',e=>{
+    document.getElementById(id+'Label').textContent=e.target.value+'°';
+  });
+});
+
+async function saveCloth(){
+  const name=document.getElementById('newName').value.trim();
+  const img=document.getElementById('newImgPreview').src;
+  if(!name){ alert('Donne un nom au vêtement.'); return; }
+  const category=document.getElementById('newCategory').value;
+  const tMin=parseInt(document.getElementById('tempMin').value,10);
+  const tMax=parseInt(document.getElementById('tempMax').value,10);
+  const cloth={
+    id: uid(), name, category,
+    typeTags:[...newSelTypes], styleTags:[...newSelStyles],
+    tempMin:Math.min(tMin,tMax), tempMax:Math.max(tMin,tMax),
+    image: img || '', createdAt: Date.now()
+  };
+  CLOTHES.push(cloth);
+  await persistCloth(cloth);
+  // reset form
+  document.getElementById('newName').value='';
+  document.getElementById('newImgPreview').src='';
+  document.getElementById('newImgFile').value='';
+  newSelTypes.clear(); newSelStyles.clear();
+  renderTypeTagPickers();
+  renderClothList(); renderMatrix();
+  alert('Vêtement ajouté ✓');
+}
+
+/* ---------------- Cloth list (back office) ---------------- */
+function renderClothList(){
+  const box=document.getElementById('clothList'); if(!box) return;
+  const q=(document.getElementById('listSearch').value||'').toLowerCase();
+  const cat=document.getElementById('listCatFilter').value;
+  box.innerHTML='';
+  const items=CLOTHES.filter(c=> (!cat||c.category===cat) && (!q || c.name.toLowerCase().includes(q)) );
+  if(!items.length){ box.innerHTML='<div class="empty">Aucun vêtement.</div>'; return; }
+  items.forEach(c=>{
+    const row=document.createElement('div'); row.className='bo-row';
+    row.innerHTML=`<img src="${c.image||''}">
+      <div class="meta"><div class="name">${c.name}</div>
+      <div>${c.category} ${c.typeTags.map(t=>'<span class=\"pill\">'+t+'</span>').join('')}</div>
+      <div>${c.styleTags.map(t=>'<span class=\"pill on\">'+t+'</span>').join('') || '<small>aucun style</small>'} · ${c.tempMin}° / ${c.tempMax}°</div></div>
+      <button class="btn ghost" onclick="editCloth('${c.id}')">✎</button>
+      <button class="btn danger ghost" onclick="deleteCloth('${c.id}')">🗑</button>`;
+    box.appendChild(row);
+  });
+}
+async function deleteCloth(id){
+  if(!confirm('Supprimer ce vêtement ?')) return;
+  CLOTHES=CLOTHES.filter(c=>c.id!==id);
+  await idbDelete('clothes',id);
+  // clean combos
+  Object.keys(META.combos).forEach(k=>{ if(k.includes(id)) delete META.combos[k]; });
+  await persistMeta();
+  renderClothList(); renderMatrix(); renderFolders();
+}
+function editCloth(id){
+  const c=CLOTHES.find(x=>x.id===id); if(!c) return;
+  const modal=document.getElementById('itemModalContent');
+  modal.innerHTML=`
+    <button class="close-x" onclick="closeModal('itemModalBg')">✕</button>
+    <h3>Modifier — ${c.name}</h3>
+    <div class="imgpick"><img src="${c.image||''}"><input type="file" accept="image/*" id="editImgFile"></div>
+    <div class="field" style="margin-top:12px;"><label>Nom</label><input id="editName" value="${c.name.replace(/"/g,'&quot;')}"></div>
+    <div class="field"><label>Plage de température</label>
+      <div class="slider-row"><span id="editTMinL">${c.tempMin}°</span>
+      <input type="range" id="editTMin" min="-20" max="40" value="${c.tempMin}">
+      <input type="range" id="editTMax" min="-20" max="40" value="${c.tempMax}">
+      <span id="editTMaxL">${c.tempMax}°</span></div>
+    </div>
+    <div class="field"><label>Types (catégories auto)</label><div class="tagbox" id="editTypeTags"></div></div>
+    <div class="field"><label>Styles</label><div class="tagbox" id="editStyleTags"></div></div>
+    <button class="btn primary" onclick="saveEditCloth('${id}')">Enregistrer</button>`;
+  const editImgFile=document.getElementById('editImgFile');
+  editImgFile.addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ modal.querySelector('img').src=r.result; }; r.readAsDataURL(f);
+  });
+  ['editTMin','editTMax'].forEach(iid=>{
+    document.getElementById(iid).addEventListener('input',e=>{
+      document.getElementById(iid+'L').textContent=e.target.value+'°';
+    });
+  });
+  const tbox=document.getElementById('editTypeTags');
+  allTypeTags(c.category).forEach(t=>{
+    const on=c.typeTags.includes(t);
+    const p=document.createElement('span'); p.className='pill'+(on?' on':''); p.textContent=t;
+    p.onclick=()=>{ const i=c.typeTags.indexOf(t); if(i>-1)c.typeTags.splice(i,1); else c.typeTags.push(t); editCloth(id); };
+    tbox.appendChild(p);
+  });
+  const sbox=document.getElementById('editStyleTags');
+  META.styleFolders.forEach(s=>{
+    const on=c.styleTags.includes(s);
+    const p=document.createElement('span'); p.className='pill'+(on?' on':''); p.textContent=s;
+    p.onclick=()=>{ const i=c.styleTags.indexOf(s); if(i>-1)c.styleTags.splice(i,1); else c.styleTags.push(s); editCloth(id); };
+    sbox.appendChild(p);
+  });
+  document.getElementById('itemModalBg').classList.add('open');
+}
+async function saveEditCloth(id){
+  const c=CLOTHES.find(x=>x.id===id); if(!c) return;
+  c.name=document.getElementById('editName').value.trim()||c.name;
+  c.tempMin=Math.min(+document.getElementById('editTMin').value, +document.getElementById('editTMax').value);
+  c.tempMax=Math.max(+document.getElementById('editTMin').value, +document.getElementById('editTMax').value);
+  const imgEl=document.querySelector('#itemModalContent img');
+  if(imgEl) c.image=imgEl.src;
+  await persistCloth(c);
+  closeModal('itemModalBg');
+  renderClothList(); renderFolders(); renderMatrix();
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+/* ---------------- Compatibility matrix ---------------- */
+function comboKey(h,b){ return h+'|'+b; }
+function comboState(h,b){ return META.combos[comboKey(h,b)]; } // true/false/undefined
+function setCombo(h,b,val){
+  const k=comboKey(h,b);
+  const cur=META.combos[k];
+  let next;
+  if(cur===undefined) next=true; else if(cur===true) next=false; else next=undefined;
+  if(next===undefined) delete META.combos[k]; else META.combos[k]=next;
+  persistMeta();
+}
+function renderMatrix(){
+  const table=document.getElementById('matrixTable'); if(!table) return;
+  const hauts=CLOTHES.filter(c=>c.category==='haut');
+  const bas=CLOTHES.filter(c=>c.category==='bas');
+  if(!hauts.length || !bas.length){ table.innerHTML=''; table.parentElement.innerHTML='<div class="empty">Ajoute au moins un haut et un bas pour construire le tableau de compatibilité.</div>'; return; }
+  let html='<tr><th class="rowhead">Haut \\ Bas</th>'+bas.map(b=>`<th><img class="thumbmini" src="${b.image||''}"><br>${b.name}</th>`).join('')+'</tr>';
+  hauts.forEach(h=>{
+    html+=`<tr><th class="rowhead"><img class="thumbmini" src="${h.image||''}">${h.name}</th>`;
+    bas.forEach(b=>{
+      const st=comboState(h.id,b.id);
+      const cls= st===true?'yes': st===false?'no':'';
+      const txt= st===true?'✓': st===false?'✕':'';
+      html+=`<td class="${cls}" onclick="cellClick('${h.id}','${b.id}',this)">${txt}</td>`;
+    });
+    html+='</tr>';
+  });
+  table.innerHTML=html;
+}
+function cellClick(h,b,el){
+  setCombo(h,b);
+  const st=comboState(h,b);
+  el.className = st===true?'yes': st===false?'no':'';
+  el.textContent = st===true?'✓': st===false?'✕':'';
+}
+
+/* ---------------- Folders view (tenue du jour) ---------------- */
+function coverImage(items){ return items[0]?.image || ''; }
+function renderFolders(){
+  const sBox=document.getElementById('styleFoldersGrid'); sBox.innerHTML='';
+  if(!META.styleFolders.length) sBox.innerHTML='<div class="empty">Aucun dossier de style. Crées-en un !</div>';
+  META.styleFolders.forEach(name=>{
+    const items=CLOTHES.filter(c=>c.styleTags.includes(name));
+    sBox.appendChild(folderCard(name, items, ()=>openFolder('style',name)));
+  });
+
+  const cBox=document.getElementById('categoryFoldersGrid'); cBox.innerHTML='';
+  const allTypes=new Set();
+  Object.values(META.categoryTypes).forEach(arr=>arr.forEach(t=>allTypes.add(t)));
+  if(!allTypes.size) cBox.innerHTML='<div class="empty">Aucune catégorie.</div>';
+  [...allTypes].forEach(t=>{
+    const items=CLOTHES.filter(c=>c.typeTags.includes(t));
+    if(!items.length) return; // hide totally empty auto categories to reduce clutter, except keep at least the standard ones visible? show all with count 0 optionally
+    cBox.appendChild(folderCard(t, items, ()=>openFolder('category',t)));
+  });
+  if(!cBox.children.length) cBox.innerHTML='<div class="empty">Ajoute des vêtements pour peupler les catégories.</div>';
+}
+function folderCard(title, items, onclick){
+  const el=document.createElement('div'); el.className='card'; el.onclick=onclick;
+  const thumb=document.createElement('div');
+  if(items.length>=2){
+    thumb.className='thumb stack';
+    thumb.innerHTML=items.slice(0,4).map(i=>`<div style="background-image:url('${i.image||''}')"></div>`).join('');
+  } else {
+    thumb.className='thumb';
+    if(items[0]) thumb.style.backgroundImage=`url('${items[0].image}')`; else thumb.textContent='vide';
+  }
+  el.appendChild(thumb);
+  const label=document.createElement('div'); label.className='label';
+  label.innerHTML=`<span>${title}</span><small>${items.length}</small>`;
+  el.appendChild(label);
+  return el;
+}
+function openFolder(kind,value){
+  currentFolder={kind,value};
+  document.getElementById('folderTitle').textContent = (kind==='style'?'Style — ':'Catégorie — ')+value;
+  renderFolderGrid();
+  showRawView('folder');
+}
+function showRawView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+}
+function renderFolderGrid(){
+  const box=document.getElementById('folderGrid'); box.innerHTML='';
+  const items = currentFolder.kind==='style'
+    ? CLOTHES.filter(c=>c.styleTags.includes(currentFolder.value))
+    : CLOTHES.filter(c=>c.typeTags.includes(currentFolder.value));
+  if(!items.length){ box.innerHTML='<div class="empty">Aucun vêtement ici pour le moment.</div>'; }
+  items.forEach(c=>{
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML=`<div class="thumb" style="background-image:url('${c.image||''}')"></div>
+      <div class="label"><span>${c.name}</span><small>${c.category}</small></div>`;
+    el.onclick=()=>pickForOutfit(c);
+    box.appendChild(el);
+  });
+  renderOutfitBuilder();
+}
+function pickForOutfit(c){
+  if(c.category==='haut') outfitPick.haut=c;
+  else if(c.category==='bas') outfitPick.bas=c;
+  else { outfitPick.extra=c; }
+  renderOutfitBuilder();
+}
+function renderOutfitBuilder(){
+  const box=document.getElementById('outfitBuilder');
+  if(!outfitPick.haut && !outfitPick.bas){ box.innerHTML=''; return; }
+  let compatHtml='<span class="badge-compat unk">Sélectionne un haut et un bas</span>';
+  if(outfitPick.haut && outfitPick.bas){
+    const st=comboState(outfitPick.haut.id,outfitPick.bas.id);
+    compatHtml = st===true?'<span class="badge-compat yes">✓ Ça va ensemble</span>'
+      : st===false?'<span class="badge-compat no">✕ À éviter</span>'
+      : '<span class="badge-compat unk">Compatibilité non renseignée</span>';
+  }
+  box.innerHTML=`<h2>Tenue en cours</h2><div class="outfit-preview">
+    ${outfitPick.haut?`<img src="${outfitPick.haut.image}">`:'<div class="empty" style="width:70px;height:70px;">haut</div>'}
+    ${outfitPick.bas?`<img src="${outfitPick.bas.image}">`:'<div class="empty" style="width:70px;height:70px;">bas</div>'}
+    <div style="align-self:center;">${compatHtml}<br><button class="btn ghost" onclick="outfitPick={};renderOutfitBuilder();">Réinitialiser</button></div>
+  </div>`;
+}
+
+/* ---------------- Folder creation modals ---------------- */
+let folderModalMode=null;
+function openStyleFolderModal(){ folderModalMode='style'; document.getElementById('folderModalTitle').textContent='Nouveau dossier de style'; document.getElementById('folderModalName').value=''; document.getElementById('folderModalBg').classList.add('open'); }
+function openCategoryFolderModal(){ folderModalMode='category'; document.getElementById('folderModalTitle').textContent='Nouvelle catégorie'; document.getElementById('folderModalName').value=''; document.getElementById('folderModalBg').classList.add('open'); }
+async function submitFolderModal(){
+  const v=document.getElementById('folderModalName').value.trim(); if(!v) return;
+  if(folderModalMode==='style'){ if(!META.styleFolders.includes(v)) META.styleFolders.push(v); }
+  else { if(!META.categoryTypes.custom) META.categoryTypes.custom=[]; if(!META.categoryTypes.custom.includes(v)) META.categoryTypes.custom.push(v); }
+  await persistMeta();
+  closeModal('folderModalBg');
+  renderFolders(); renderTypeTagPickers();
+}
+
+/* ---------------- Filtre par vêtement ---------------- */
+function renderFiltreView(){
+  const sel=document.getElementById('filtreSelect');
+  sel.innerHTML='<option value="">— choisir un vêtement —</option>'+
+    CLOTHES.map(c=>`<option value="${c.id}">${c.name} (${c.category})</option>`).join('');
+  sel.onchange=()=>renderFiltreResult(sel.value);
+  document.getElementById('filtreResult').innerHTML='';
+}
+function renderFiltreResult(id){
+  const box=document.getElementById('filtreResult');
+  const c=CLOTHES.find(x=>x.id===id);
+  if(!c){ box.innerHTML=''; return; }
+  let matches=[];
+  if(c.category==='haut') matches=CLOTHES.filter(b=>b.category==='bas' && comboState(c.id,b.id)===true);
+  else if(c.category==='bas') matches=CLOTHES.filter(h=>h.category==='haut' && comboState(h.id,c.id)===true);
+  box.innerHTML=`<div class="filter-picked"><img src="${c.image||''}"><div><div style="font-weight:700;">${c.name}</div><small>${c.category}</small></div></div>
+    <h2>Se marie avec (${matches.length})</h2>` +
+    (matches.length? `<div class="grid">${matches.map(m=>`<div class="card"><div class="thumb" style="background-image:url('${m.image||''}')"></div><div class="label"><span>${m.name}</span></div></div>`).join('')}</div>`
+    : `<div class="empty">Aucune combinaison validée pour l'instant. Va dans "Mon dressing → Tableau de compatibilité" pour en renseigner.</div>`);
+}
+
+/* ---------------- Météo ---------------- */
+async function fetchWeather(){
+  document.getElementById('weatherSub').textContent='Localisation en cours…';
+  if(!navigator.geolocation){ document.getElementById('weatherSub').textContent='Géolocalisation non disponible.'; return; }
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude,longitude}=pos.coords;
+    try{
+      const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code`);
+      const j=await r.json();
+      const temp=Math.round(j.current.temperature_2m);
+      document.getElementById('weatherTemp').textContent=temp+'°C';
+      document.getElementById('weatherSub').textContent='Météo actuelle à ta position';
+      renderMeteoLists(temp);
+    }catch(e){
+      document.getElementById('weatherSub').textContent="Impossible de récupérer la météo.";
+    }
+  }, err=>{
+    document.getElementById('weatherSub').textContent="Localisation refusée — impossible de filtrer par météo.";
+  });
+}
+function renderMeteoView(){
+  fetchWeather();
+}
+function renderMeteoLists(temp){
+  const hBox=document.getElementById('meteoHauts'), bBox=document.getElementById('meteoBas');
+  const hauts=CLOTHES.filter(c=>c.category==='haut' && temp>=c.tempMin && temp<=c.tempMax);
+  const bas=CLOTHES.filter(c=>c.category==='bas' && temp>=c.tempMin && temp<=c.tempMax);
+  hBox.innerHTML = hauts.length? hauts.map(c=>cardHtml(c)).join('') : '<div class="empty">Rien pour cette température.</div>';
+  bBox.innerHTML = bas.length? bas.map(c=>cardHtml(c)).join('') : '<div class="empty">Rien pour cette température.</div>';
+}
+function cardHtml(c){
+  return `<div class="card"><div class="thumb" style="background-image:url('${c.image||''}')"></div><div class="label"><span>${c.name}</span><small>${c.tempMin}°/${c.tempMax}°</small></div></div>`;
+}
+
+/* ---------------- Tenue du jour (aléatoire, change chaque jour) ---------------- */
+function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function seededRng(seed){
+  let s = 0; for(let i=0;i<seed.length;i++) s = (s*31 + seed.charCodeAt(i)) >>> 0;
+  return function(){ s = (s*1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+function validPairs(){
+  const hauts=CLOTHES.filter(c=>c.category==='haut');
+  const bas=CLOTHES.filter(c=>c.category==='bas');
+  let pairs=[];
+  hauts.forEach(h=>bas.forEach(b=>{ if(comboState(h.id,b.id)===true) pairs.push([h,b]); }));
+  if(!pairs.length){ // pas encore de compatibilité renseignée : on propose au hasard toute paire non marquée "à éviter"
+    hauts.forEach(h=>bas.forEach(b=>{ if(comboState(h.id,b.id)!==false) pairs.push([h,b]); }));
+  }
+  return pairs;
+}
+function pickDaily(rng){
+  const pairs=validPairs();
+  if(!pairs.length) return null;
+  const idx=Math.floor(rng()*pairs.length);
+  return pairs[idx];
+}
+async function renderDaily(){
+  const body=document.getElementById('dailyBody'); if(!body) return;
+  const key=todayKey();
+  let pair;
+  if(META.daily && META.daily.date===key && META.daily.hautId){
+    const h=CLOTHES.find(c=>c.id===META.daily.hautId), b=CLOTHES.find(c=>c.id===META.daily.basId);
+    pair = (h&&b)? [h,b] : pickDaily(seededRng(key));
+  } else {
+    pair = pickDaily(seededRng(key));
+    if(pair){ META.daily={date:key, hautId:pair[0].id, basId:pair[1].id}; await persistMeta(); }
+  }
+  if(!pair){ body.innerHTML='<div class="empty">Ajoute des hauts et des bas dans "Mon dressing" pour obtenir une proposition.</div>'; return; }
+  const [h,b]=pair;
+  const st=comboState(h.id,b.id);
+  const compat = st===true?'<span class="badge-compat yes">✓ Ça va ensemble</span>' : st===false?'<span class="badge-compat no">✕ À éviter</span>' : '<span class="badge-compat unk">Non renseigné</span>';
+  body.innerHTML=`<img src="${h.image||''}"><img src="${b.image||''}"><div style="align-self:center;"><div style="font-weight:700;">${h.name} + ${b.name}</div>${compat}</div>`;
+}
+async function rerollDaily(){
+  const pair=pickDaily(Math.random);
+  if(!pair) return;
+  META.daily={date:todayKey(), hautId:pair[0].id, basId:pair[1].id};
+  await persistMeta();
+  renderDaily();
+}
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  await loadAll();
+  renderFolders();
+  renderTypeTagPickers();
+  renderDaily();
+})();
+</script>
+</body>
+</html>
